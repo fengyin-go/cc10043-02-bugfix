@@ -1,0 +1,30 @@
+{
+  "round": 1,
+  "timestamp": "2026-11-21T22:27:00+08:00",
+  "base_commit": "b047a120ea0a0b35c2a57ae804a66efd676b4c8d",
+  "tests": [
+    {
+      "name": "python-compileall",
+      "command": "python3 -m compileall backend/",
+      "exit_code": 0,
+      "result": "passed",
+      "detail": "所有27个Python文件编译成功，无语法错误"
+    },
+    {
+      "name": "frontend-npm-install",
+      "command": "npm install",
+      "exit_code": 0,
+      "result": "passed",
+      "detail": "51 packages added, 0 errors"
+    },
+    {
+      "name": "frontend-typecheck",
+      "command": "npx vue-tsc --noEmit",
+      "exit_code": 0,
+      "result": "passed",
+      "detail": "TypeScript类型检查通过，无类型错误"
+    }
+  ],
+  "overall": "passed",
+  "fixes_applied": []
+}
