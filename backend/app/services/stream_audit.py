@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from app.services.base import BaseModuleService
+from app.services.batch_replay import original_members, receipted_ids
 from app.store import store
 
 
@@ -50,6 +51,30 @@ class StreamAuditService(BaseModuleService):
         return {"ok": True, "source": source, "total": total_msgs, "success": total_success,
                 "deviation_rate": round((total_msgs - total_success) / max(total_msgs, 1) * 100, 1),
                 "status": status}
+
+    def unreplayed_detail(self, source: str) -> dict[str, Any]:
+        """审计视角的未补录明细：与补录入口共用逐条交付回执重算，保证两侧一致。"""
+        delivered = receipted_ids(source)
+        confirmed: list[str] = []
+        for task in store.rows("batch_replay"):
+            if str(task.get("目标Topic", "")) != source:
+                continue
+            members = [str(m) for m in (task.get("confirmed_members") or [])]
+            if not members:
+                members = [
+                    str(p.get("消息ID", ""))
+                    for p in original_members(
+                        source, task.get("开始时间", ""), task.get("结束时间", ""))
+                ]
+            for mid in members:
+                if mid not in confirmed:
+                    confirmed.append(mid)
+        return {
+            "source": source,
+            "confirmed": confirmed,
+            "delivered": [m for m in confirmed if m in delivered],
+            "unreplayed": [m for m in confirmed if m not in delivered],
+        }
 
     def validate_data_lineage(self, source: str) -> dict[str, Any]:
         """验证数据血缘链路中各模块的完整性。"""

@@ -41,9 +41,15 @@ class PayloadStoreService(BaseModuleService):
         return {"ok": True, "compressed": compressed}
 
     def get_replay_source(self, topic: str, limit: int = 100) -> list[dict[str, Any]]:
-        """从载荷存储提取回放数据源。"""
+        """从载荷存储提取回放数据源：采集批次精确匹配，回放副本不再作为输入。"""
+        from app.services.batch_replay import is_replay_copy
         rows = store.rows(self.MODULE)
-        matched = [r for r in rows if topic in str(r.get("采集批次", "")) and r.get("status") in ("已存储", "已压缩")]
+        matched = [
+            r for r in rows
+            if str(r.get("采集批次", "")) == topic
+            and not is_replay_copy(r)
+            and r.get("status") in ("已存储", "已压缩")
+        ]
         return matched[:limit]
 
     def validate_batch_integrity(self, batch_name: str) -> dict[str, Any]:
